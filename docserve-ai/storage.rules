@@ -1,0 +1,19 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /uploads/{fileName} {
+      allow read: if true;
+      allow write: if request.resource.size < 20 * 1024 * 1024
+                   && request.resource.contentType.matches('application/pdf|application/msword|application/vnd.openxmlformats.*');
+    }
+    match /payments/{fileName} {
+      allow read: if true;
+      allow write: if request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+    match /final/{fileName} {
+      allow read: if true;
+      allow write: if false; // Admin only via Firebase Console or Admin SDK
+    }
+  }
+}
