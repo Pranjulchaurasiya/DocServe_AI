@@ -1,72 +1,6 @@
-import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
-import { supabase } from '../supabase'
-
 const skills = ['Python', 'Flask', 'Web Development', 'Firebase', 'React', 'AI/ML']
 
 export default function Profile() {
-  const { orderId } = useParams()
-
-  const [profileUrl, setProfileUrl] = useState(null)
-  const [uploading, setUploading] = useState(false)
-
-  // 🔥 Upload + DB Save
-  const handleUpload = async (file) => {
-    if (!file) return
-
-    setUploading(true)
-
-    try {
-      const fileName = `profile_${Date.now()}_${file.name}`
-
-      // 📤 Upload to Supabase Storage
-      const { error } = await supabase.storage
-        .from('profiles')
-        .upload(fileName, file)
-
-      if (error) throw error
-
-      // 🔗 Get public URL
-      const { data: urlData } = supabase.storage
-        .from('profiles')
-        .getPublicUrl(fileName)
-
-      const imageUrl = urlData.publicUrl
-
-      setProfileUrl(imageUrl)
-
-      // 💾 Save to DB
-      await supabase
-        .from('orders')
-        .update({ profile_url: imageUrl })
-        .eq('id', orderId)
-
-    } catch (err) {
-      console.log("Upload error:", err.message)
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  // 🔥 Fetch on reload
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!orderId) return
-
-      const { data, error } = await supabase
-        .from('orders')
-        .select('profile_url')
-        .eq('id', orderId)
-        .single()
-
-      if (!error && data?.profile_url) {
-        setProfileUrl(data.profile_url)
-      }
-    }
-
-    fetchProfile()
-  }, [orderId])
-
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
 
@@ -74,77 +8,77 @@ export default function Profile() {
       <div className="card mb-6">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
 
-          {/* 🖼️ Profile Image */}
-          <div className="w-24 h-24 rounded-full overflow-hidden flex-shrink-0">
-            <img
-              src={profileUrl || "https://via.placeholder.com/150"}
-              alt="Profile"
-              className="w-full h-full object-cover"
-            />
+          {/* Avatar */}
+          <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-4xl font-bold flex-shrink-0">
+            P
           </div>
 
-          {/* Info */}
           <div className="text-center sm:text-left">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Pranjul Chaurasiya
-            </h1>
-
-            <p className="text-blue-600 font-medium mt-0.5">
-              Developer & Document Service Provider
-            </p>
-
-            {/* 📤 Upload */}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleUpload(e.target.files[0])}
-              className="mt-2 text-sm"
-            />
-
-            {uploading && (
-              <p className="text-xs text-gray-500 mt-1">Uploading...</p>
-            )}
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pranjul Chaurasiya</h1>
+            <p className="text-blue-600 font-medium mt-0.5">Developer & Document Service Provider</p>
+            <div className="inline-flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full mt-2">
+              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+              <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">TechBug Organization</span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* About */}
       <div className="card mb-6">
-        <h2 className="font-semibold text-gray-900 dark:text-white mb-3">
-          About TechBug
-        </h2>
+        <h2 className="font-semibold text-gray-900 dark:text-white mb-3">About TechBug</h2>
         <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-          TechBug is a student-driven tech group focused on providing smart digital solutions like document services, AI tools, and web-based platforms.
+          TechBug is a student-driven tech group focused on providing smart digital solutions like document services, AI tools, and web-based platforms to simplify everyday problems.
         </p>
       </div>
 
       {/* Skills */}
       <div className="card mb-6">
-        <h2 className="font-semibold text-gray-900 dark:text-white mb-4">
-          Skills & Technologies
-        </h2>
-
+        <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Skills & Technologies</h2>
         <div className="flex flex-wrap gap-2">
           {skills.map(skill => (
-            <span
-              key={skill}
-              className="px-4 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-sm font-medium"
-            >
+            <span key={skill} className="px-4 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-sm font-medium">
               {skill}
             </span>
           ))}
         </div>
       </div>
 
+      {/* Services */}
+      <div className="card mb-6">
+        <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Services Offered</h2>
+        <div className="grid sm:grid-cols-3 gap-3">
+          {[
+            { icon: '⌨️', title: 'Document Typing' },
+            { icon: '📄', title: 'PDF Formatting' },
+            { icon: '📝', title: 'Resume Building' },
+          ].map(s => (
+            <div key={s.title} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">
+              <div className="text-2xl mb-2">{s.icon}</div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{s.title}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Contact */}
       <div className="card">
-        <h2 className="font-semibold text-gray-900 dark:text-white mb-4">
-          Contact
-        </h2>
-
-        <div className="space-y-2 text-sm">
-          <p>📞 +91 9532998196</p>
-          <p>✉️ solutionsattechbug@gmail.com</p>
+        <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Contact</h2>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center text-lg">📞</div>
+            <div>
+              <p className="text-xs text-gray-400">Phone</p>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">+91 9532998196</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center text-lg">✉️</div>
+            <div>
+              <p className="text-xs text-gray-400">Email</p>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">solutionsattechbug@gmail.com</p>
+            </div>
+          </div>
         </div>
       </div>
 
