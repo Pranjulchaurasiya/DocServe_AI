@@ -8,9 +8,9 @@ export default function Profile() {
       <div className="card mb-6">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
 
-          {/* Avatar */}
-          <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-4xl font-bold flex-shrink-0">
-            P
+          {/* Profile Photo */}
+          <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 border-2 border-blue-100">
+            <img src="https://rwmssdpbzloafnevnjvc.supabase.co/storage/v1/object/public/profiles/profile_1773945719142_cropped_circle_image.png" alt="Pranjul Chaurasiya" className="w-full h-full object-cover" />
           </div>
 
           <div className="text-center sm:text-left">
