@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 
-const UPI_ID = 'techbug@upi'
-const UPI_NAME = 'TechBug DocServe'
+const UPI_ID = 'techbugdoc@upi'
+const UPI_NAME = 'Pranjul Chaurasiya'
 
 export default function Payment() {
   const { orderId } = useParams()
@@ -100,8 +100,12 @@ export default function Payment() {
 
         <div className="card text-center">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Pay via UPI</h3>
-          <div className="w-32 h-32 bg-gray-100 dark:bg-gray-800 rounded-xl mx-auto mb-3 flex items-center justify-center">
-            <span className="text-4xl">📱</span>
+          <div className="w-40 h-40 rounded-xl mx-auto mb-3 overflow-hidden border border-gray-200 dark:border-gray-700">
+            <img
+              src="https://rwmssdpbzloafnevnjvc.supabase.co/storage/v1/object/public/profiles/photo_2026-03-20_03-33-35.jpg"
+              alt="UPI QR Code"
+              className="w-full h-full object-cover"
+            />
           </div>
           <p className="text-xs text-gray-500 mb-1">UPI ID</p>
           <p className="font-mono font-semibold text-blue-600 text-sm">{UPI_ID}</p>
