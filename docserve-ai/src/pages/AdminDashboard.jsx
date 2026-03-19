@@ -159,7 +159,7 @@ export default function AdminDashboard() {
                     </a>
                   )}
 
-                  {order.status !== 'approved' && order.status !== 'rejected' && (
+                  {order.status !== 'rejected' && (
                     <>
                       <label className="cursor-pointer">
                         <span className="btn-secondary text-xs block text-center">
@@ -171,18 +171,22 @@ export default function AdminDashboard() {
                           onChange={e => e.target.files[0] && uploadFinalFile(order.id, e.target.files[0])}
                         />
                       </label>
-                      <button
-                        onClick={() => updateStatus(order.id, 'approved')}
-                        className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold py-2 px-4 rounded-xl transition-colors"
-                      >
-                        ✅ Approve
-                      </button>
-                      <button
-                        onClick={() => updateStatus(order.id, 'rejected')}
-                        className="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold py-2 px-4 rounded-xl transition-colors"
-                      >
-                        ❌ Reject
-                      </button>
+                      {order.status !== 'approved' && (
+                        <>
+                          <button
+                            onClick={() => updateStatus(order.id, 'approved')}
+                            className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold py-2 px-4 rounded-xl transition-colors"
+                          >
+                            ✅ Approve
+                          </button>
+                          <button
+                            onClick={() => updateStatus(order.id, 'rejected')}
+                            className="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold py-2 px-4 rounded-xl transition-colors"
+                          >
+                            ❌ Reject
+                          </button>
+                        </>
+                      )}
                     </>
                   )}
 
