@@ -22,7 +22,7 @@ export default function App() {
               <Route path="/upload" element={<Upload />} />
               <Route path="/payment/:orderId" element={<Payment />} />
               <Route path="/order-status" element={<OrderStatus />} />
-              <Route path="/profile/:orderId" element={<Profile />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={<AdminLogin />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
             </Routes>
