@@ -108,6 +108,23 @@ export default function Profile() {
             </a>
           </div>
 
+          {/* LinkedIn */}
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center text-lg">💼</div>
+            <div className="flex-1">
+              <p className="text-xs text-gray-400">LinkedIn</p>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">pranjul-chaurasiya-developers</p>
+            </div>
+            <a
+              href="https://www.linkedin.com/in/pranjul-chaurasiya-developers/"
+              target="_blank"
+              rel="noreferrer"
+              className="px-3 py-1.5 bg-blue-700 text-white text-xs font-medium rounded-lg hover:bg-blue-800 transition-colors"
+            >
+              Connect
+            </a>
+          </div>
+
         </div>
       </div>
 
