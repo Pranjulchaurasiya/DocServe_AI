@@ -2,9 +2,8 @@ import { createContext, useContext, useState } from 'react'
 
 const AdminAuthContext = createContext(null)
 
-// Simple hardcoded admin credentials — replace with Firebase Auth in production
-const ADMIN_EMAIL = 'admin@docserve.ai'
-const ADMIN_PASSWORD = 'admin123'
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD
 
 export function AdminAuthProvider({ children }) {
   const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem('isAdmin') === 'true')
