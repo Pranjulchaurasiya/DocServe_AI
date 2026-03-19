@@ -65,20 +65,49 @@ export default function Profile() {
       <div className="card">
         <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Contact</h2>
         <div className="space-y-3">
+
+          {/* Phone — call or WhatsApp */}
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center text-lg">📞</div>
-            <div>
+            <div className="flex-1">
               <p className="text-xs text-gray-400">Phone</p>
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300">+91 9532998196</p>
             </div>
+            <div className="flex gap-2">
+              <a
+                href="tel:+919532998196"
+                className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Call
+              </a>
+              <a
+                href="https://wa.me/919532998196"
+                target="_blank"
+                rel="noreferrer"
+                className="px-3 py-1.5 bg-green-500 text-white text-xs font-medium rounded-lg hover:bg-green-600 transition-colors"
+              >
+                WhatsApp
+              </a>
+            </div>
           </div>
+
+          {/* Email — opens Gmail compose */}
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center text-lg">✉️</div>
-            <div>
+            <div className="flex-1">
               <p className="text-xs text-gray-400">Email</p>
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300">solutionsattechbug@gmail.com</p>
             </div>
+            <a
+              href="https://mail.google.com/mail/?view=cm&to=solutionsattechbug@gmail.com"
+              target="_blank"
+              rel="noreferrer"
+              className="px-3 py-1.5 bg-red-500 text-white text-xs font-medium rounded-lg hover:bg-red-600 transition-colors"
+            >
+              Email
+            </a>
           </div>
+
         </div>
       </div>
 
