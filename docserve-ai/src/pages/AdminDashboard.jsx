@@ -16,6 +16,7 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState({})
+  const [uploadError, setUploadError] = useState({})
   const [filter, setFilter] = useState('all')
 
   useEffect(() => {
@@ -51,18 +52,19 @@ export default function AdminDashboard() {
 
   const uploadFinalFile = async (orderId, file) => {
     setUploading(prev => ({ ...prev, [orderId]: 10 }))
+    setUploadError(prev => ({ ...prev, [orderId]: null }))
 
     try {
-      const filePath = `final/${orderId}_${file.name}`
+      const filePath = `${orderId}_${file.name}`
       const { error: uploadError } = await supabase.storage
-        .from('docserve')
+        .from('final')
         .upload(filePath, file, { upsert: true })
 
       if (uploadError) throw uploadError
       setUploading(prev => ({ ...prev, [orderId]: 70 }))
 
       const { data: { publicUrl } } = supabase.storage
-        .from('docserve')
+        .from('final')
         .getPublicUrl(filePath)
 
       const { error: dbError } = await supabase
@@ -75,6 +77,7 @@ export default function AdminDashboard() {
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, final_file_url: publicUrl, status: 'approved' } : o))
     } catch (err) {
       console.error(err)
+      setUploadError(prev => ({ ...prev, [orderId]: err.message }))
     } finally {
       setUploading(prev => { const n = { ...prev }; delete n[orderId]; return n })
     }
@@ -171,6 +174,9 @@ export default function AdminDashboard() {
                           onChange={e => e.target.files[0] && uploadFinalFile(order.id, e.target.files[0])}
                         />
                       </label>
+                      {uploadError[order.id] && (
+                        <p className="text-xs text-red-500 bg-red-50 px-2 py-1 rounded">{uploadError[order.id]}</p>
+                      )}
                       {order.status !== 'approved' && (
                         <>
                           <button
