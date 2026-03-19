@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { collection, query, where, getDocs } from 'firebase/firestore'
-import { db } from '../firebase'
+import { supabase } from '../supabase'
 
 const statusConfig = {
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: '⏳' },
@@ -10,7 +9,7 @@ const statusConfig = {
 }
 
 export default function OrderStatus() {
-  const [query_, setQuery_] = useState('')
+  const [searchVal, setSearchVal] = useState('')
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
@@ -18,28 +17,33 @@ export default function OrderStatus() {
 
   const handleSearch = async (e) => {
     e.preventDefault()
-    if (!query_.trim()) return
+    if (!searchVal.trim()) return
     setLoading(true)
     setError('')
     setOrders([])
 
     try {
-      const col = collection(db, 'orders')
-      // Try phone first, then order ID
-      let results = []
+      // Try phone number first
+      let { data, error: err } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('phone', searchVal.trim())
+        .order('created_at', { ascending: false })
 
-      const phoneQ = query(col, where('phone', '==', query_.trim()))
-      const phoneSnap = await getDocs(phoneQ)
-      phoneSnap.forEach(d => results.push({ id: d.id, ...d.data() }))
+      if (err) throw err
 
-      if (results.length === 0) {
-        // Try as order ID directly
-        const { getDoc, doc } = await import('firebase/firestore')
-        const docSnap = await getDoc(doc(db, 'orders', query_.trim()))
-        if (docSnap.exists()) results.push({ id: docSnap.id, ...docSnap.data() })
+      // If no results, try as UUID order ID
+      if (!data || data.length === 0) {
+        const { data: byId, error: idErr } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', searchVal.trim())
+
+        if (idErr) throw idErr
+        data = byId || []
       }
 
-      setOrders(results)
+      setOrders(data)
       setSearched(true)
     } catch (err) {
       setError(err.message)
@@ -59,8 +63,8 @@ export default function OrderStatus() {
         <input
           className="input-field flex-1"
           placeholder="Phone number or Order ID"
-          value={query_}
-          onChange={e => setQuery_(e.target.value)}
+          value={searchVal}
+          onChange={e => setSearchVal(e.target.value)}
         />
         <button type="submit" className="btn-primary whitespace-nowrap" disabled={loading}>
           {loading ? '...' : 'Search'}
@@ -72,7 +76,7 @@ export default function OrderStatus() {
       {searched && orders.length === 0 && (
         <div className="card text-center py-12">
           <div className="text-4xl mb-3">🔍</div>
-          <p className="text-gray-500 dark:text-gray-400">No orders found for <strong>{query_}</strong></p>
+          <p className="text-gray-500 dark:text-gray-400">No orders found for <strong>{searchVal}</strong></p>
         </div>
       )}
 
@@ -102,7 +106,7 @@ export default function OrderStatus() {
                 </div>
                 <div>
                   <p className="text-gray-400 text-xs">Cost</p>
-                  <p className="font-medium text-blue-600">{typeof order.cost === 'number' ? `₹${order.cost}` : order.cost}</p>
+                  <p className="font-medium text-blue-600">{order.cost ? `₹${order.cost}` : 'TBD'}</p>
                 </div>
                 <div>
                   <p className="text-gray-400 text-xs">Phone</p>

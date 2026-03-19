@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
-import { doc, updateDoc } from 'firebase/firestore'
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
-import { db, storage } from '../firebase'
+import { supabase } from '../supabase'
 
-// Replace with your UPI details
 const UPI_ID = 'techbug@upi'
 const UPI_NAME = 'TechBug DocServe'
 
@@ -30,27 +27,36 @@ export default function Payment() {
 
     setUploading(true)
     setError('')
+    setProgress(30)
 
     try {
-      const storageRef = ref(storage, `payments/${orderId}_${Date.now()}_${ssFile.name}`)
-      const task = uploadBytesResumable(storageRef, ssFile)
+      const ssPath = `payments/${orderId}_${Date.now()}_${ssFile.name}`
+      const { error: uploadError } = await supabase.storage
+        .from('payments')
+        .upload(ssPath, ssFile, { contentType: ssFile.type })
 
-      task.on('state_changed',
-        snap => setProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-        err => { setError(err.message); setUploading(false) },
-        async () => {
-          const ssUrl = await getDownloadURL(task.snapshot.ref)
-          await updateDoc(doc(db, 'orders', orderId), {
-            payment_ss_url: ssUrl,
-            transaction_id: txnId,
-            status: 'payment_submitted',
-          })
-          setDone(true)
-          setUploading(false)
-        }
-      )
+      if (uploadError) throw uploadError
+      setProgress(70)
+
+      const { data: { publicUrl: ssUrl } } = supabase.storage
+        .from('payments')
+        .getPublicUrl(ssPath)
+
+      const { error: dbError } = await supabase
+        .from('orders')
+        .update({
+          payment_ss_url: ssUrl,
+          transaction_id: txnId,
+          status: 'payment_submitted',
+        })
+        .eq('id', orderId)
+
+      if (dbError) throw dbError
+      setProgress(100)
+      setDone(true)
     } catch (err) {
       setError(err.message)
+    } finally {
       setUploading(false)
     }
   }
@@ -76,7 +82,6 @@ export default function Payment() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-6 mb-6">
-        {/* Order summary */}
         <div className="card">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Order Summary</h3>
           <div className="space-y-2 text-sm">
@@ -93,10 +98,8 @@ export default function Payment() {
           </div>
         </div>
 
-        {/* UPI details */}
         <div className="card text-center">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Pay via UPI</h3>
-          {/* QR placeholder */}
           <div className="w-32 h-32 bg-gray-100 dark:bg-gray-800 rounded-xl mx-auto mb-3 flex items-center justify-center">
             <span className="text-4xl">📱</span>
           </div>
@@ -112,7 +115,6 @@ export default function Payment() {
         </div>
       </div>
 
-      {/* Payment proof form */}
       <form onSubmit={handleSubmit} className="card space-y-5">
         <h3 className="font-semibold text-gray-900 dark:text-white">Upload Payment Proof</h3>
 

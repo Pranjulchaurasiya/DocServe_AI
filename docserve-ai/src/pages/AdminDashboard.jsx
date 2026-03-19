@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, getDocs, doc, updateDoc, orderBy, query } from 'firebase/firestore'
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
-import { db, storage } from '../firebase'
+import { supabase } from '../supabase'
 import { useAdminAuth } from '../context/AdminAuthContext'
 
 const statusColors = {
@@ -28,9 +26,13 @@ export default function AdminDashboard() {
   const fetchOrders = async () => {
     setLoading(true)
     try {
-      const q = query(collection(db, 'orders'), orderBy('created_at', 'desc'))
-      const snap = await getDocs(q)
-      setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setOrders(data || [])
     } catch (err) {
       console.error(err)
     } finally {
@@ -39,25 +41,43 @@ export default function AdminDashboard() {
   }
 
   const updateStatus = async (orderId, status) => {
-    await updateDoc(doc(db, 'orders', orderId), { status })
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o))
+    const { error } = await supabase
+      .from('orders')
+      .update({ status })
+      .eq('id', orderId)
+
+    if (!error) setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o))
   }
 
   const uploadFinalFile = async (orderId, file) => {
-    setUploading(prev => ({ ...prev, [orderId]: 0 }))
-    const storageRef = ref(storage, `final/${orderId}_${file.name}`)
-    const task = uploadBytesResumable(storageRef, file)
+    setUploading(prev => ({ ...prev, [orderId]: 10 }))
 
-    task.on('state_changed',
-      snap => setUploading(prev => ({ ...prev, [orderId]: Math.round((snap.bytesTransferred / snap.totalBytes) * 100) })),
-      err => { console.error(err); setUploading(prev => { const n = { ...prev }; delete n[orderId]; return n }) },
-      async () => {
-        const url = await getDownloadURL(task.snapshot.ref)
-        await updateDoc(doc(db, 'orders', orderId), { final_file_url: url, status: 'approved' })
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, final_file_url: url, status: 'approved' } : o))
-        setUploading(prev => { const n = { ...prev }; delete n[orderId]; return n })
-      }
-    )
+    try {
+      const filePath = `final/${orderId}_${file.name}`
+      const { error: uploadError } = await supabase.storage
+        .from('docserve')
+        .upload(filePath, file, { upsert: true })
+
+      if (uploadError) throw uploadError
+      setUploading(prev => ({ ...prev, [orderId]: 70 }))
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('docserve')
+        .getPublicUrl(filePath)
+
+      const { error: dbError } = await supabase
+        .from('orders')
+        .update({ final_file_url: publicUrl, status: 'approved' })
+        .eq('id', orderId)
+
+      if (dbError) throw dbError
+
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, final_file_url: publicUrl, status: 'approved' } : o))
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setUploading(prev => { const n = { ...prev }; delete n[orderId]; return n })
+    }
   }
 
   const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
@@ -104,7 +124,6 @@ export default function AdminDashboard() {
           {filtered.map(order => (
             <div key={order.id} className="card">
               <div className="flex flex-col lg:flex-row lg:items-start gap-4">
-                {/* Order info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-3">
                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusColors[order.status] || 'bg-gray-100 text-gray-600'}`}>
@@ -116,7 +135,7 @@ export default function AdminDashboard() {
                     <div><p className="text-xs text-gray-400">Name</p><p className="font-medium">{order.name}</p></div>
                     <div><p className="text-xs text-gray-400">Phone</p><p className="font-medium">{order.phone}</p></div>
                     <div><p className="text-xs text-gray-400">Pages</p><p className="font-medium">{order.pages}</p></div>
-                    <div><p className="text-xs text-gray-400">Cost</p><p className="font-medium text-blue-600">{typeof order.cost === 'number' ? `₹${order.cost}` : order.cost}</p></div>
+                    <div><p className="text-xs text-gray-400">Cost</p><p className="font-medium text-blue-600">{order.cost ? `₹${order.cost}` : 'TBD'}</p></div>
                   </div>
                   {order.instructions && (
                     <p className="text-xs text-gray-500 mt-2 bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded-lg">
@@ -128,7 +147,6 @@ export default function AdminDashboard() {
                   )}
                 </div>
 
-                {/* Actions */}
                 <div className="flex flex-col gap-2 min-w-[200px]">
                   {order.file_url && (
                     <a href={order.file_url} target="_blank" rel="noreferrer" className="btn-secondary text-xs text-center">
@@ -143,7 +161,6 @@ export default function AdminDashboard() {
 
                   {order.status !== 'approved' && order.status !== 'rejected' && (
                     <>
-                      {/* Upload final file */}
                       <label className="cursor-pointer">
                         <span className="btn-secondary text-xs block text-center">
                           {uploading[order.id] !== undefined ? `Uploading ${uploading[order.id]}%` : '⬆️ Upload Final File'}
@@ -154,7 +171,6 @@ export default function AdminDashboard() {
                           onChange={e => e.target.files[0] && uploadFinalFile(order.id, e.target.files[0])}
                         />
                       </label>
-
                       <button
                         onClick={() => updateStatus(order.id, 'approved')}
                         className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold py-2 px-4 rounded-xl transition-colors"
